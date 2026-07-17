@@ -363,3 +363,85 @@ export const malePoseidonTridentSVG = `data:image/svg+xml;utf8,<svg xmlns="http:
   <text x="200" y="365" font-family="'Courier New', monospace" font-size="12" fill="url(%23goldTrident)" letter-spacing="4" text-anchor="middle" font-weight="bold">POSEIDON DEEP SOVEREIGN</text>
   <text x="200" y="45" font-family="'Courier New', monospace" font-size="9" fill="%232dd4bf" letter-spacing="6" text-anchor="middle">GRADE I • ABYSS &amp; OCEANS</text>
 </svg>`;
+
+export function getGothicCardSVG(gender: string, grade: number, characterName: string): string {
+  let primaryColor = "%239b1c1c"; // crimson red
+  let stopColor1 = "%231a0b2e";
+  let stopColor2 = "%230f051d";
+  let stopColor3 = "%232b001a";
+  let subtitle = "GRADE II • NOBLE BLOOD";
+  let symbolPath = "";
+  
+  if (grade === 1) {
+    primaryColor = "%23ffd700"; // gold
+    stopColor1 = "%232e1f0b";
+    stopColor2 = "%231d1205";
+    stopColor3 = "%23442a08";
+    subtitle = "GRADE I • CELESTIAL IMMORTAL";
+    symbolPath = `<path d="M150,160 L170,200 L200,150 L230,200 L250,160 L240,240 L160,240 Z" fill="url(%23goldGrad)" filter="url(%23glow)"/>`;
+  } else if (grade === 2) {
+    primaryColor = "%23ef4444"; // bright red
+    stopColor1 = "%231a0202";
+    stopColor2 = "%23050000";
+    stopColor3 = "%232b0213";
+    subtitle = "GRADE II • ARCHDEMON SOVEREIGN";
+    symbolPath = `<path d="M140,180 C160,160 180,190 200,180 C220,190 240,160 260,180 C240,210 210,210 200,200 C190,210 160,210 140,180 Z" fill="%239b1c1c" stroke="%23ff3333" stroke-width="1.5" filter="url(%23glow)"/>
+                  <path d="M185,170 Q170,140 160,130 Q175,140 188,160 Z" fill="%23000000" stroke="%23ff3333" stroke-width="1"/>
+                  <path d="M215,170 Q230,140 240,130 Q225,140 212,160 Z" fill="%23000000" stroke="%23ff3333" stroke-width="1"/>`;
+  } else if (grade === 3) {
+    primaryColor = "%232dd4bf"; // teal
+    stopColor1 = "%23042f2e";
+    stopColor2 = "%23022c22";
+    stopColor3 = "%23064e3b";
+    subtitle = "GRADE III • SPECTRAL APPARITION";
+    symbolPath = `<circle cx="200" cy="180" r="35" fill="none" stroke="%232dd4bf" stroke-width="2" stroke-dasharray="5 5" filter="url(%23glow)"/>
+                  <path d="M180,180 Q200,140 220,180 Q200,220 180,180 Z" fill="none" stroke="%232dd4bf" stroke-width="1" opacity="0.5"/>`;
+  } else {
+    primaryColor = "%2322c55e"; // green
+    stopColor1 = "%23022c22";
+    stopColor2 = "%23020617";
+    stopColor3 = "%2314532d";
+    subtitle = "GRADE IV • UNDEAD ABOMINATION";
+    symbolPath = `<path d="M180,160 L220,200 M220,160 L180,200" stroke="%2322c55e" stroke-width="3" stroke-linecap="round" filter="url(%23glow)"/>
+                  <circle cx="200" cy="180" r="10" fill="%23020617" stroke="%2322c55e" stroke-width="2"/>`;
+  }
+
+  const safeName = characterName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${stopColor1}"/>
+      <stop offset="50%" stop-color="${stopColor2}"/>
+      <stop offset="100%" stop-color="${stopColor3}"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="%23ffd700"/>
+      <stop offset="50%" stop-color="%23b8860b"/>
+      <stop offset="100%" stop-color="%238b6508"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(%23bgGrad)"/>
+  <circle cx="200" cy="180" r="110" fill="none" stroke="${primaryColor}" stroke-width="1.5" stroke-dasharray="10 5" opacity="0.3"/>
+  <circle cx="200" cy="180" r="90" fill="none" stroke="${primaryColor}" stroke-width="0.5" opacity="0.2"/>
+  <path d="M120,280 V160 A80,80 0 0,1 280,160 V280" fill="none" stroke="${primaryColor}" stroke-width="1" opacity="0.15"/>
+  <path d="M140,280 V170 A60,60 0 0,1 260,170 V280" fill="none" stroke="${primaryColor}" stroke-width="0.5" opacity="0.1"/>
+  ${symbolPath}
+  <rect x="15" y="15" width="370" height="370" fill="none" stroke="${primaryColor}" stroke-width="1.5" opacity="0.7" filter="url(%23glow)"/>
+  <rect x="22" y="22" width="356" height="356" fill="none" stroke="%23ffffff" stroke-width="0.5" opacity="0.2"/>
+  <path d="M15,25 H25 M20,15 V25" stroke="${primaryColor}" stroke-width="1.5"/>
+  <path d="M375,25 H385 M380,15 V25" stroke="${primaryColor}" stroke-width="1.5"/>
+  <path d="M15,375 H25 M20,365 V385" stroke="${primaryColor}" stroke-width="1.5"/>
+  <path d="M375,375 H385 M380,365 V385" stroke="${primaryColor}" stroke-width="1.5"/>
+  <text x="200" y="345" font-family="'Cinzel', 'Playfair Display', 'Georgia', serif" font-size="14" fill="%23ffffff" text-anchor="middle" font-weight="900" letter-spacing="2" filter="url(%23glow)">${safeName}</text>
+  <text x="200" y="365" font-family="'Courier New', monospace" font-size="10" fill="${primaryColor}" letter-spacing="4" text-anchor="middle" font-weight="bold">${subtitle}</text>
+  <text x="200" y="50" font-family="'Courier New', monospace" font-size="9" fill="${primaryColor}" letter-spacing="6" text-anchor="middle">THE MIRROR OF TRUTH</text>
+</svg>`;
+}
