@@ -119,7 +119,8 @@ export class HeartbeatSynth {
   }
 
   /**
-   * Plays a faint, eerie, atmospheric horror sound effect (slow-building dissonant pad and shivering wind).
+   * Plays a subtle, scary synthetic female scream/gasp when the result is revealed.
+   * Utilizes multiple oscillators for vocal formants, FM rapid vibrato, and band-passed noise.
    */
   playSpookySound() {
     if (this.isMuted) return;
@@ -132,97 +133,96 @@ export class HeartbeatSynth {
       }
 
       const now = this.ctx.currentTime;
-      const duration = 6.0; // Total duration of the atmospheric sound (seconds)
+      const duration = 1.4; // Shorter scream duration for subtlety
 
-      // Master gain for the spooky sound (keep it faint / weak as requested by the user: "약하게 나오게 해줘")
+      // Master gain node - specifically tuned to make it small and subtle but audible
       const masterGain = this.ctx.createGain();
       masterGain.connect(this.ctx.destination);
       
-      // Gentle fade in (1.5s attack) and very long slow fade out (4.5s release)
+      // Volume envelope: very quick attack (gasp), brief hold, and natural horror decay
       masterGain.gain.setValueAtTime(0, now);
-      masterGain.gain.linearRampToValueAtTime(0.12, now + 1.5); // Faint volume level
-      masterGain.gain.setValueAtTime(0.12, now + 2.5);
+      masterGain.gain.linearRampToValueAtTime(0.22, now + 0.06); // Increased maximum volume for better audibility
+      masterGain.gain.setValueAtTime(0.22, now + 0.35);
       masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-      // Low pass filter to keep the sound dark, mysterious, and warm
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(400, now);
-      filter.Q.setValueAtTime(1.0, now);
-      // Sweep the filter frequency down slightly to mimic shifting wind/shadows
-      filter.frequency.exponentialRampToValueAtTime(200, now + duration);
-      filter.connect(masterGain);
+      // Main vocal formant filter (bandpass isolates typical screaming voice frequencies)
+      const voiceFilter = this.ctx.createBiquadFilter();
+      voiceFilter.type = "bandpass";
+      voiceFilter.frequency.setValueAtTime(1400, now);
+      voiceFilter.Q.setValueAtTime(1.2, now);
+      voiceFilter.connect(masterGain);
 
-      // --- 1. Low, deep rumbling sub-drone (Tension root: A2 at 110Hz) ---
-      const droneOsc = this.ctx.createOscillator();
-      droneOsc.type = "sawtooth"; // Rich in harmonics, but muffled by the low-pass filter
-      droneOsc.frequency.setValueAtTime(110, now); // A2
+      // --- 1. Primary Female Vocal Pitch (F0: high-mid feminine range) ---
+      const f0 = this.ctx.createOscillator();
+      f0.type = "sawtooth"; // Rich screaming vocal timbre
+      f0.frequency.setValueAtTime(620, now); // Starts around 620Hz
+      f0.frequency.exponentialRampToValueAtTime(1080, now + 0.14); // Quick upward terror pitch bend
+      f0.frequency.linearRampToValueAtTime(950, now + 0.5); // Hold pitch
+      f0.frequency.exponentialRampToValueAtTime(450, now + duration); // Wear off into a heavy gasp
+
+      // Vibrato LFO - rapid tremor to simulate raw panic and vocal cord tension
+      const vibratoLfo = this.ctx.createOscillator();
+      vibratoLfo.frequency.setValueAtTime(19, now); // 19Hz intense shiver
+      const vibratoGain = this.ctx.createGain();
+      vibratoGain.gain.setValueAtTime(55, now); // Modulate pitch up and down by 55Hz
       
-      const droneGain = this.ctx.createGain();
-      droneGain.gain.setValueAtTime(0.4, now);
-      droneOsc.connect(droneGain);
-      droneGain.connect(filter);
+      vibratoLfo.connect(vibratoGain);
+      vibratoGain.connect(f0.frequency);
 
-      // --- 2. Dissonant minor-second cluster (E4 and F4 creating an eerie pulsing beat) ---
-      const osc1 = this.ctx.createOscillator();
-      const osc2 = this.ctx.createOscillator();
+      // --- 2. Shrill Overtone (F1: high screaming formant) ---
+      const f1 = this.ctx.createOscillator();
+      f1.type = "triangle"; // Slightly smoother but bright
+      f1.frequency.setValueAtTime(1240, now);
+      f1.frequency.exponentialRampToValueAtTime(2160, now + 0.14);
+      f1.frequency.linearRampToValueAtTime(1900, now + 0.5);
+      f1.frequency.exponentialRampToValueAtTime(900, now + duration);
+      vibratoGain.connect(f1.frequency); // Synchronized shaking
+
+      // --- 3. Shivering Ghost Air (White noise for breathiness/raspiness of the scream) ---
+      const bufferSize = this.ctx.sampleRate * duration;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        noiseData[i] = Math.random() * 2 - 1;
+      }
       
-      osc1.type = "triangle"; // Smooth but dark
-      osc2.type = "sine";     // Pure tone to mix in
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+
+      // Bandpass filter to isolate high-frequency breath/gasp
+      const noiseFilter = this.ctx.createBiquadFilter();
+      noiseFilter.type = "bandpass";
+      noiseFilter.frequency.setValueAtTime(2200, now);
+      noiseFilter.Q.setValueAtTime(1.0, now);
+      noiseFilter.connect(masterGain);
+
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.10, now); // Increased air noise level for clearer gasp texture
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
       
-      osc1.frequency.setValueAtTime(329.63, now); // E4
-      osc2.frequency.setValueAtTime(349.23, now); // F4 (Dissonant minor second above E4)
+      noiseSource.connect(noiseGain);
+      noiseGain.connect(noiseFilter);
 
-      // Add slight detuning to create a natural, slow-beating chorusing horror effect
-      osc1.detune.setValueAtTime(-6, now);
-      osc2.detune.setValueAtTime(6, now);
+      // Connect pitch oscillators to the main vocal filter
+      const oscGain = this.ctx.createGain();
+      oscGain.gain.setValueAtTime(0.30, now); // Boosted core vocal oscillators for high clarity
+      f0.connect(oscGain);
+      f1.connect(oscGain);
+      oscGain.connect(voiceFilter);
 
-      const clusterGain = this.ctx.createGain();
-      clusterGain.gain.setValueAtTime(0.35, now);
-      
-      osc1.connect(clusterGain);
-      osc2.connect(clusterGain);
-      clusterGain.connect(filter);
+      // Launch all components
+      vibratoLfo.start(now);
+      f0.start(now);
+      f1.start(now);
+      noiseSource.start(now);
 
-      // --- 3. Shivering high ghost whistle (A5 at 880Hz with pitch vibrato LFO) ---
-      const highOsc = this.ctx.createOscillator();
-      highOsc.type = "sine";
-      highOsc.frequency.setValueAtTime(880, now); // A5
-
-      // LFO to modulate the high frequency to create a shivering, trembling ghost effect
-      const lfo = this.ctx.createOscillator();
-      lfo.frequency.setValueAtTime(5.5, now); // 5.5Hz vibrato speed
-      
-      const lfoGain = this.ctx.createGain();
-      lfoGain.gain.setValueAtTime(15, now); // Modulate pitch up and down by 15Hz
-
-      lfo.connect(lfoGain);
-      lfoGain.connect(highOsc.frequency);
-
-      const highGain = this.ctx.createGain();
-      // Fade in the high shivering whistle slightly later for progressive dread
-      highGain.gain.setValueAtTime(0, now);
-      highGain.gain.linearRampToValueAtTime(0.2, now + 1.2);
-      highGain.gain.exponentialRampToValueAtTime(0.001, now + duration - 0.5);
-
-      lfo.start(now);
-      highOsc.connect(highGain);
-      highGain.connect(filter);
-
-      // Start all sound generators
-      droneOsc.start(now);
-      osc1.start(now);
-      osc2.start(now);
-      highOsc.start(now);
-
-      // Clean up nodes after completion
-      droneOsc.stop(now + duration);
-      osc1.stop(now + duration);
-      osc2.stop(now + duration);
-      highOsc.stop(now + duration);
-      lfo.stop(now + duration);
+      // Safely schedule stop and release
+      vibratoLfo.stop(now + duration);
+      f0.stop(now + duration);
+      f1.stop(now + duration);
+      noiseSource.stop(now + duration);
     } catch (e) {
-      console.warn("Eerie synthesizer failed to play sound:", e);
+      console.warn("Spooky scream sound synthesis failed:", e);
     }
   }
 

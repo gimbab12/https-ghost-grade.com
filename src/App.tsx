@@ -16,6 +16,8 @@ import {
   Sparkles,
   AlertCircle,
   Eye,
+  EyeOff,
+  Key,
   Globe,
   Download
 } from "lucide-react";
@@ -26,6 +28,8 @@ import { HeartbeatSynth } from "./utils/audio";
 
 // Import the gorgeous custom gothic card image matcher
 import { getCharacterImage } from "./assets/images";
+import { KakaoAd } from "./components/KakaoAd";
+import { AdSense } from "./components/AdSense";
 
 // Lazy initialize heartbeat synthesizer
 const synth = new HeartbeatSynth();
@@ -168,13 +172,13 @@ export default function App() {
         }
         return next;
       });
-    }, 80);
+    }, 20);
 
     // Cycle text messages
     const textInterval = setInterval(() => {
       currentMsgIdx = (currentMsgIdx + 1) % messages.length;
       setLoadingText(messages[currentMsgIdx]);
-    }, 1600);
+    }, 400);
 
     return () => {
       clearInterval(progressInterval);
@@ -387,9 +391,12 @@ export default function App() {
       }
     });
 
+    // Start a 2-second timer to synchronize with the progress bar
+    const delayPromise = new Promise((resolve) => setTimeout(resolve, 2000));
+
     try {
       // API call to custom Express server
-      const response = await fetch("/api/analyze", {
+      const apiPromise = fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -399,26 +406,26 @@ export default function App() {
           gradePreference: preferredGrade,
           lang: lang,
         }),
+      }).then(async (response) => {
+        if (!response.ok) {
+          throw new Error("서버 분석에 실패했습니다.");
+        }
+        return response.json();
       });
 
-      if (!response.ok) {
-        throw new Error("서버 분석에 실패했습니다.");
-      }
-
-      const data = await response.json();
-      setResult(data);
+      // Wait for BOTH the API call and the 5-second loading delay to finish
+      const [apiResult] = await Promise.all([apiPromise, delayPromise]);
+      setResult(apiResult);
     } catch (error: any) {
       console.warn("Express-Gemini API failed, using atmospheric local fallback generator...", error);
-      // Wait for a realistic loading time to build maximum suspense with the heartbeat synth
-      await new Promise((resolve) => setTimeout(resolve, 3500));
+      // Wait for the remaining time of the 5-second delay if not already elapsed
+      await delayPromise;
       const fallbackResult = getFallbackAnalysis(preferredGrade, gender || "male");
       setResult(fallbackResult);
     } finally {
-      // Ensure heartbeat continues slightly for dramatic suspense, then transition to result screen
-      setTimeout(() => {
-        setStep("result");
-        synth.setBpm(72); // Slow back down to a haunting steady beat
-      }, 1000);
+      // Transition immediately to result screen since 5 seconds have elapsed
+      setStep("result");
+      synth.setBpm(72); // Slow back down to a haunting steady beat
     }
   };
 
@@ -1104,6 +1111,12 @@ ${window.location.href}`;
 
         </div>
       </main>
+      
+      {/* Google AdSense & Kakao AdFit Bottom Ad Section */}
+      <div className="flex flex-col items-center justify-center gap-2 max-w-lg mx-auto px-4 w-full">
+        <AdSense />
+        <KakaoAd />
+      </div>
 
       {/* Footer */}
       <footer className="border-t border-zinc-950 bg-black/50 p-4 text-center">
